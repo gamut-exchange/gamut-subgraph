@@ -1,6 +1,5 @@
 /* eslint-disable prefer-const */
 import { ERC20 } from "../types/Factory/ERC20"
-import { StaticTokenDefinition } from "./staticTokenDefinition"
 import { BigInt, Address } from "@graphprotocol/graph-ts"
 import { isNullEthValue } from "."
 

@@ -70,11 +70,11 @@ export function bigDecimalExp18(): BigDecimal {
 }
 
 export function convertTokenToDecimal(tokenAmount: BigInt): BigDecimal {
-  return tokenAmount.toBigDecimal().div(exponentToBigDecimal(18))
+  return tokenAmount.toBigDecimal().div(exponentToBigDecimal(BigInt.fromString('18')))
 }
 
 export function convertEthToDecimal(eth: BigInt): BigDecimal {
-  return eth.toBigDecimal().div(exponentToBigDecimal(18))
+  return eth.toBigDecimal().div(exponentToBigDecimal(BigInt.fromString('18')))
 }
 
 export function loadTransaction(call: ethereum.Call): Transaction {

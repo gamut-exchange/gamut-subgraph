@@ -32,7 +32,7 @@ export let WHITELIST_TOKENS: string[] = [
 //   return [price0, price1]
 // }
 
-export function getTokenPrices(poolAddress: Address, token0: Token, token1: Token) {
+export function getTokenPrices(poolAddress: Address, token0: Token, token1: Token):BigDecimal[] {
   let poolContract = PoolABI.bind(poolAddress);
   let poolWeights = poolContract.getWeights();
   let whiteList0 = token0.whitelistPools
@@ -101,6 +101,8 @@ export function getTokenPrices(poolAddress: Address, token0: Token, token1: Toke
       return [price0, price1]
     }
   }
+
+  return [ZERO_BD, ZERO_BD]
 
 }
 

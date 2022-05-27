@@ -6,7 +6,7 @@ import { PoolCreated } from '../types/Factory/Factory'
 import { Pool, Token, Bundle } from '../types/schema'
 import { Pool as PoolTemplate } from '../types/templates'
 import { fetchTokenSymbol, fetchTokenName, fetchTokenTotalSupply, fetchTokenDecimals } from '../utils/token'
-import { log, BigInt, Address } from '@graphprotocol/graph-ts'
+import { log, Address } from '@graphprotocol/graph-ts'
 
 export function handlePoolCreated(event: PoolCreated): void {
   // temp fix
@@ -110,8 +110,8 @@ export function handlePoolCreated(event: PoolCreated): void {
 
   pool.token0 = token0.id
   pool.token1 = token1.id
-  pool.weight1 = ZERO_BI
-  pool.weight2 = ZERO_BI
+  pool.weight0 = ZERO_BD
+  pool.weight1 = ZERO_BD
   pool.feeTier = ZERO_BI
   pool.createdAtTimestamp = event.block.timestamp
   pool.createdAtBlockNumber = event.block.number

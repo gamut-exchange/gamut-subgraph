@@ -1,14 +1,15 @@
 /* eslint-disable prefer-const */
 import { Bundle, Factory, Pool, Swap, Join, Exit, Token } from '../types/schema'
-import { Pool as PoolABI } from '../types/Factory/Pool'
-import { Address, BigDecimal, BigInt, ethereum, store } from '@graphprotocol/graph-ts'
+import { Pool as PoolABI, SwapFeePercentageChanged } from '../types/Factory/Pool'
+import { Address, BigDecimal } from '@graphprotocol/graph-ts'
 import {
+  SwapFeePercentageChanged as SwapFeeEvent,
   OnSwapCall as SwapCall,
   OnJoinPoolCall as JoinPoolCall,
   OnExitPoolCall as ExitPoolCall
 } from '../types/templates/Pool/Pool'
 import { convertTokenToDecimal, loadTransaction, safeDiv } from '../utils'
-import { FACTORY_ADDRESS, ONE_BI, ZERO_BD, ZERO_BI } from '../utils/constants'
+import { FACTORY_ADDRESS, ONE_BI, ZERO_BD } from '../utils/constants'
 import { findEthPerToken, getEthPriceInUSD, getTrackedAmountUSD, getTokenPrices } from '../utils/pricing'
 import {
   updatePoolDayData,
@@ -18,18 +19,24 @@ import {
   updateGamutDayData
 } from '../utils/intervalUpdates'
 
+export function handleSwapFee(event: SwapFeeEvent): void {
+  let poolAddress = event.address.toHexString()
+  let pool = Pool.load(poolAddress)
+  pool.feeTier = event.params.swapFeePercentage
+  pool.save()
+}
+
 export function handleSwap(call: SwapCall): void {
   let bundle = Bundle.load('1')
   let factory = Factory.load(FACTORY_ADDRESS)
   // let factoryContract = FactoryABI.bind(Address.fromString(FACTORY_ADDRESS))
   // let poolAddress = factoryContract.getPool(call.inputs.tokenIn, call.from)
-  let pool = Pool.load(call.from.toHexString())
-
-  // hot fix for bad pricing
-  if (pool.id == '0x9663f2ca0454accad3e094448ea6f77443880454') {
-    return
-  }
-
+  let poolAddress = call.to.toHexString()
+  let pool = Pool.load(poolAddress)
+  let poolContract = PoolABI.bind(Address.fromString(poolAddress))
+  let weights = poolContract.getWeights()
+  pool.weight0 = weights[0].toBigDecimal();
+  pool.weight1 = weights[0].toBigDecimal();
   let token0 = Token.load(pool.token0)
   let token1 = Token.load(pool.token1)
 
@@ -195,156 +202,156 @@ export function handleSwap(call: SwapCall): void {
   token1.save()
 }
 
-export function handleJoinPool(call: JoinPoolCall): void {
-  let bundle = Bundle.load('1')
-  let poolAddress = call.from.toHexString()
-  let pool = Pool.load(poolAddress)
-  let factory = Factory.load(FACTORY_ADDRESS)
+// export function handleJoinPool(call: JoinPoolCall): void {
+//   let bundle = Bundle.load('1')
+//   let poolAddress = call.from.toHexString()
+//   let pool = Pool.load(poolAddress)
+//   let factory = Factory.load(FACTORY_ADDRESS)
 
-  let token0 = Token.load(pool.token0)
-  let token1 = Token.load(pool.token1)
-  let amount0 = convertTokenToDecimal(call.inputs.balances[0])
-  let amount1 = convertTokenToDecimal(call.inputs.balances[1])
+//   let token0 = Token.load(pool.token0)
+//   let token1 = Token.load(pool.token1)
+//   let amount0 = convertTokenToDecimal(call.inputValues[2].value.toBigIntArray()[0])
+//   let amount1 = convertTokenToDecimal(call.inputValues[2].value.toBigIntArray()[1])
 
-  let amountUSD = amount0
-    .times(token0.derivedETH.times(bundle.ethPriceUSD))
-    .plus(amount1.times(token1.derivedETH.times(bundle.ethPriceUSD)))
+//   let amountUSD = amount0
+//     .times(token0.derivedETH.times(bundle.ethPriceUSD))
+//     .plus(amount1.times(token1.derivedETH.times(bundle.ethPriceUSD)))
 
-  // reset tvl aggregates until new amounts calculated
-  factory.totalValueLockedETH = factory.totalValueLockedETH.minus(pool.totalValueLockedETH)
+//   // reset tvl aggregates until new amounts calculated
+//   factory.totalValueLockedETH = factory.totalValueLockedETH.minus(pool.totalValueLockedETH)
 
-  // update globals
-  factory.txCount = factory.txCount.plus(ONE_BI)
+//   // update globals
+//   factory.txCount = factory.txCount.plus(ONE_BI)
 
-  // update token0 data
-  token0.txCount = token0.txCount.plus(ONE_BI)
-  token0.totalValueLocked = token0.totalValueLocked.plus(amount0)
-  token0.totalValueLockedUSD = token0.totalValueLocked.times(token0.derivedETH.times(bundle.ethPriceUSD))
+//   // update token0 data
+//   token0.txCount = token0.txCount.plus(ONE_BI)
+//   token0.totalValueLocked = token0.totalValueLocked.plus(amount0)
+//   token0.totalValueLockedUSD = token0.totalValueLocked.times(token0.derivedETH.times(bundle.ethPriceUSD))
 
-  // update token1 data
-  token1.txCount = token1.txCount.plus(ONE_BI)
-  token1.totalValueLocked = token1.totalValueLocked.plus(amount1)
-  token1.totalValueLockedUSD = token1.totalValueLocked.times(token1.derivedETH.times(bundle.ethPriceUSD))
+//   // update token1 data
+//   token1.txCount = token1.txCount.plus(ONE_BI)
+//   token1.totalValueLocked = token1.totalValueLocked.plus(amount1)
+//   token1.totalValueLockedUSD = token1.totalValueLocked.times(token1.derivedETH.times(bundle.ethPriceUSD))
 
-  // pool data
-  pool.txCount = pool.txCount.plus(ONE_BI)
+//   // pool data
+//   pool.txCount = pool.txCount.plus(ONE_BI)
 
-  pool.totalValueLockedToken0 = pool.totalValueLockedToken0.plus(amount0)
-  pool.totalValueLockedToken1 = pool.totalValueLockedToken1.plus(amount1)
-  pool.totalValueLockedETH = pool.totalValueLockedToken0
-    .times(token0.derivedETH)
-    .plus(pool.totalValueLockedToken1.times(token1.derivedETH))
-  pool.totalValueLockedUSD = pool.totalValueLockedETH.times(bundle.ethPriceUSD)
+//   pool.totalValueLockedToken0 = pool.totalValueLockedToken0.plus(amount0)
+//   pool.totalValueLockedToken1 = pool.totalValueLockedToken1.plus(amount1)
+//   pool.totalValueLockedETH = pool.totalValueLockedToken0
+//     .times(token0.derivedETH)
+//     .plus(pool.totalValueLockedToken1.times(token1.derivedETH))
+//   pool.totalValueLockedUSD = pool.totalValueLockedETH.times(bundle.ethPriceUSD)
 
-  // reset aggregates with new amounts
-  factory.totalValueLockedETH = factory.totalValueLockedETH.plus(pool.totalValueLockedETH)
-  factory.totalValueLockedUSD = factory.totalValueLockedETH.times(bundle.ethPriceUSD)
+//   // reset aggregates with new amounts
+//   factory.totalValueLockedETH = factory.totalValueLockedETH.plus(pool.totalValueLockedETH)
+//   factory.totalValueLockedUSD = factory.totalValueLockedETH.times(bundle.ethPriceUSD)
 
-  let transaction = loadTransaction(call)
-  let join = new Join(transaction.id.toString() + '#' + pool.txCount.toString())
-  join.transaction = transaction.id
-  join.timestamp = transaction.timestamp
-  join.pool = pool.id
-  join.token0 = pool.token0
-  join.token1 = pool.token1
-  join.sender = call.inputs.sender
-  join.origin = call.transaction.from
-  join.amount0 = amount0
-  join.amount1 = amount1
-  join.amountUSD = amountUSD
-  join.logIndex = call.transaction.index
+//   let transaction = loadTransaction(call)
+//   let join = new Join(transaction.id.toString() + '#' + pool.txCount.toString())
+//   join.transaction = transaction.id
+//   join.timestamp = transaction.timestamp
+//   join.pool = pool.id
+//   join.token0 = pool.token0
+//   join.token1 = pool.token1
+//   join.sender = call.inputs.sender
+//   join.origin = call.transaction.from
+//   join.amount0 = amount0
+//   join.amount1 = amount1
+//   join.amountUSD = amountUSD
+//   join.logIndex = call.transaction.index
 
-  updateGamutDayData(call)
-  updatePoolDayData(call)
-  updatePoolHourData(call)
-  updateTokenDayData(token0 as Token, call)
-  updateTokenDayData(token1 as Token, call)
-  updateTokenHourData(token0 as Token, call)
-  updateTokenHourData(token1 as Token, call)
+//   updateGamutDayData(call)
+//   updatePoolDayData(call)
+//   updatePoolHourData(call)
+//   updateTokenDayData(token0 as Token, call)
+//   updateTokenDayData(token1 as Token, call)
+//   updateTokenHourData(token0 as Token, call)
+//   updateTokenHourData(token1 as Token, call)
 
-  token0.save()
-  token1.save()
-  pool.save()
-  factory.save()
-  join.save()
-}
+//   token0.save()
+//   token1.save()
+//   pool.save()
+//   factory.save()
+//   join.save()
+// }
 
-export function handleExitPool(call: ExitPoolCall): void {
-  let bundle = Bundle.load('1')
-  let poolAddress = call.from.toHexString()
-  let pool = Pool.load(poolAddress)
-  let factory = Factory.load(FACTORY_ADDRESS)
-  let poolContract = PoolABI.bind(Address.fromString(poolAddress));
-  let weights = poolContract.getWeights();
+// export function handleExitPool(call: ExitPoolCall): void {
+//   let bundle = Bundle.load('1')
+//   let poolAddress = call.from.toHexString()
+//   let pool = Pool.load(poolAddress)
+//   let factory = Factory.load(FACTORY_ADDRESS)
+//   let poolContract = PoolABI.bind(Address.fromString(poolAddress));
+//   let weights = poolContract.getWeights();
 
-  let token0 = Token.load(pool.token0)
-  let token1 = Token.load(pool.token1)
-  let amount0 = convertTokenToDecimal(call.inputs.balances[0])
-  let amount1 = convertTokenToDecimal(call.inputs.balances[0])
+//   let token0 = Token.load(pool.token0)
+//   let token1 = Token.load(pool.token1)
+//   let amount0 = convertTokenToDecimal(call.inputValues[2].value.toBigIntArray()[0])
+//   let amount1 = convertTokenToDecimal(call.inputValues[2].value.toBigIntArray()[1])
 
-  let amountUSD = amount0
-    .times(token0.derivedETH.times(bundle.ethPriceUSD))
-    .plus(amount1.times(token1.derivedETH.times(bundle.ethPriceUSD)))
+//   let amountUSD = amount0
+//     .times(token0.derivedETH.times(bundle.ethPriceUSD))
+//     .plus(amount1.times(token1.derivedETH.times(bundle.ethPriceUSD)))
 
-  // reset tvl aggregates until new amounts calculated
-  factory.totalValueLockedETH = factory.totalValueLockedETH.minus(pool.totalValueLockedETH)
+//   // reset tvl aggregates until new amounts calculated
+//   factory.totalValueLockedETH = factory.totalValueLockedETH.minus(pool.totalValueLockedETH)
 
-  // update globals
-  factory.txCount = factory.txCount.plus(ONE_BI)
+//   // update globals
+//   factory.txCount = factory.txCount.plus(ONE_BI)
 
-  // update pool
-  pool.weight0 = weights[0].toBigDecimal()
-  pool.weight1 = weights[1].toBigDecimal()
+//   // update pool
+//   pool.weight0 = weights[0].toBigDecimal()
+//   pool.weight1 = weights[1].toBigDecimal()
 
-  // update token0 data
-  token0.txCount = token0.txCount.plus(ONE_BI)
-  token0.totalValueLocked = token0.totalValueLocked.minus(amount0)
-  token0.totalValueLockedUSD = token0.totalValueLocked.times(token0.derivedETH.times(bundle.ethPriceUSD))
+//   // update token0 data
+//   token0.txCount = token0.txCount.plus(ONE_BI)
+//   token0.totalValueLocked = token0.totalValueLocked.minus(amount0)
+//   token0.totalValueLockedUSD = token0.totalValueLocked.times(token0.derivedETH.times(bundle.ethPriceUSD))
 
-  // update token1 data
-  token1.txCount = token1.txCount.plus(ONE_BI)
-  token1.totalValueLocked = token1.totalValueLocked.minus(amount1)
-  token1.totalValueLockedUSD = token1.totalValueLocked.times(token1.derivedETH.times(bundle.ethPriceUSD))
+//   // update token1 data
+//   token1.txCount = token1.txCount.plus(ONE_BI)
+//   token1.totalValueLocked = token1.totalValueLocked.minus(amount1)
+//   token1.totalValueLockedUSD = token1.totalValueLocked.times(token1.derivedETH.times(bundle.ethPriceUSD))
 
-  // pool data
-  pool.txCount = pool.txCount.plus(ONE_BI)
+//   // pool data
+//   pool.txCount = pool.txCount.plus(ONE_BI)
 
-  pool.totalValueLockedToken0 = pool.totalValueLockedToken0.minus(amount0)
-  pool.totalValueLockedToken1 = pool.totalValueLockedToken1.minus(amount1)
-  pool.totalValueLockedETH = pool.totalValueLockedToken0
-    .times(token0.derivedETH)
-    .plus(pool.totalValueLockedToken1.times(token1.derivedETH))
-  pool.totalValueLockedUSD = pool.totalValueLockedETH.times(bundle.ethPriceUSD)
+//   pool.totalValueLockedToken0 = pool.totalValueLockedToken0.minus(amount0)
+//   pool.totalValueLockedToken1 = pool.totalValueLockedToken1.minus(amount1)
+//   pool.totalValueLockedETH = pool.totalValueLockedToken0
+//     .times(token0.derivedETH)
+//     .plus(pool.totalValueLockedToken1.times(token1.derivedETH))
+//   pool.totalValueLockedUSD = pool.totalValueLockedETH.times(bundle.ethPriceUSD)
 
-  // reset aggregates with new amounts
-  factory.totalValueLockedETH = factory.totalValueLockedETH.plus(pool.totalValueLockedETH)
-  factory.totalValueLockedUSD = factory.totalValueLockedETH.times(bundle.ethPriceUSD)
+//   // reset aggregates with new amounts
+//   factory.totalValueLockedETH = factory.totalValueLockedETH.plus(pool.totalValueLockedETH)
+//   factory.totalValueLockedUSD = factory.totalValueLockedETH.times(bundle.ethPriceUSD)
 
-  // burn entity
-  let transaction = loadTransaction(call)
-  let exit = new Exit(transaction.id + '#' + pool.txCount.toString())
-  exit.transaction = transaction.id
-  exit.timestamp = transaction.timestamp
-  exit.pool = pool.id
-  exit.token0 = pool.token0
-  exit.token1 = pool.token1
-  exit.sender = call.inputs.sender
-  exit.origin = call.transaction.from
-  exit.amount0 = amount0
-  exit.amount1 = amount1
-  exit.amountUSD = amountUSD
+//   // burn entity
+//   let transaction = loadTransaction(call)
+//   let exit = new Exit(transaction.id + '#' + pool.txCount.toString())
+//   exit.transaction = transaction.id
+//   exit.timestamp = transaction.timestamp
+//   exit.pool = pool.id
+//   exit.token0 = pool.token0
+//   exit.token1 = pool.token1
+//   exit.sender = call.inputs.sender
+//   exit.origin = call.transaction.from
+//   exit.amount0 = amount0
+//   exit.amount1 = amount1
+//   exit.amountUSD = amountUSD
 
-  updateGamutDayData(call)
-  updatePoolDayData(call)
-  updatePoolHourData(call)
-  updateTokenDayData(token0 as Token, call)
-  updateTokenDayData(token1 as Token, call)
-  updateTokenHourData(token0 as Token, call)
-  updateTokenHourData(token1 as Token, call)
+//   updateGamutDayData(call)
+//   updatePoolDayData(call)
+//   updatePoolHourData(call)
+//   updateTokenDayData(token0 as Token, call)
+//   updateTokenDayData(token1 as Token, call)
+//   updateTokenHourData(token0 as Token, call)
+//   updateTokenHourData(token1 as Token, call)
 
-  token0.save()
-  token1.save()
-  pool.save()
-  factory.save()
-  exit.save()
-}
+//   token0.save()
+//   token1.save()
+//   pool.save()
+//   factory.save()
+//   exit.save()
+// }

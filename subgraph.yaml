@@ -1,6 +1,6 @@
 specVersion: 0.0.2
-description: Uniswap is a decentralized protocol for automated token exchange on Ethereum.
-repository: https://github.com/Uniswap/uniswap-v3-subgraph
+description: Gamut is a decentralized protocol for automated token exchange on Ethereum.
+repository: https://github.com/Gamut-DEX/gamut-v3-subgraph
 schema:
   file: ./schema.graphql
 dataSources:
@@ -50,10 +50,13 @@ templates:
           file: ./abis/factory.json
         - name: ERC20
           file: ./abis/ERC20.json
+      eventHandlers:
+        - event: SwapFeePercentageChanged(uint256)
+          handler: handleSwapFee
       callHandlers:
-        - function: onSwap(address,uint256,int256,int256,uint160,uint128,int24)
+        - function: onSwap(address,uint256,uint256,uint256,uint256)
           handler: handleSwap
-        - function: onJoinPool(address,address,uint256[],uint256,bytes)
-          handler: handleJoinPool
-        - function: onExitPool(address,address,uint256[], uint256, bytes)
-          handler: handleExitPool
+        # - function: onJoinPool(address,address,uint256[],uint256,bytes)
+        #   handler: handleJoinPool
+        # - function: onExitPool(address,address,uint256[],uint256,bytes)
+        #   handler: handleExitPool
