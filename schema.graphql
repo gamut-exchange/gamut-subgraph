@@ -91,6 +91,8 @@ type Pool @entity {
   feeTier: BigInt!
   # in range liquidity
   liquidity: BigInt!
+  # token0 / token1
+  ratio: BigDecimal!
   # token0 per token1
   token0Price: BigDecimal!
   # token1 per token0
@@ -143,7 +145,7 @@ type Transaction @entity {
   # timestamp txn was confirmed
   timestamp: BigInt!
   # gas used during txn execution
-  gasUsed: BigInt!
+  # gasUsed: BigInt!
   gasPrice: BigInt!
 }
 
@@ -163,9 +165,9 @@ type Swap @entity {
   # sender of the swap
   sender: Bytes!
   # recipient of the swap
-  recipient: Bytes!
+  recipient: Bytes
   # txn origin
-  origin: Bytes! # the EOA that initiated the txn
+  origin: Bytes # the EOA that initiated the txn
   # delta of token0 swapped
   amount0: BigDecimal!
   # delta of token1 swapped
@@ -192,9 +194,9 @@ type Join @entity {
   # the address that joined the liquidity
   sender: Bytes
   # txn origin
-  origin: Bytes! # the EOA that initiated the txn
+  origin: Bytes # the EOA that initiated the txn
   # amount of liquidity joined
-  amount: BigInt!
+  amount: BigDecimal!
   # amount of token 0 joined
   amount0: BigDecimal!
   # amount of token 1 joined
@@ -221,9 +223,9 @@ type Exit @entity {
   # need this to pull recent txns for specific token or pool
   timestamp: BigInt!
   # txn origin
-  origin: Bytes! # the EOA that initiated the txn
+  origin: Bytes # the EOA that initiated the txn
   # amouny of liquidity exited
-  amount: BigInt!
+  amount: BigDecimal!
   # amount of token 0 exited
   amount0: BigDecimal!
   # amount of token 1 exited
@@ -268,7 +270,7 @@ type PoolDayData @entity {
   token0Price: BigDecimal!
   # price of token1 - derived from sqrtPrice
   token1Price: BigDecimal!
-  tvlUSD: BigDecimal!
+  tvlUSD: BigDecimal
   # volume in token0
   volumeToken0: BigDecimal!
   # volume in token1
@@ -386,4 +388,42 @@ type TokenHourData @entity {
   low: BigDecimal!
   # close price USD
   close: BigDecimal!
+}
+
+type SwapData @entity {
+  # Router address
+  id: ID!
+  # address of token received
+  tokenIn: Bytes!
+  # address of token sent
+  tokenOut: Bytes!
+  # amount of token received
+  amountIn: BigInt!
+  # amount of token sent
+  amountOut: BigInt!
+  # swap fee amount of pool
+  protocolSwapFeeAmount: BigInt!
+  # sender address
+  sender: Bytes!
+  # pool address
+  pool: Bytes!
+  # block hash
+  block: Bytes!
+  # timestamp of transaction
+  timestamp: BigInt!
+  # transaction hash
+  transaction: Bytes!
+}
+
+type JoinExitPoolData @entity {
+  id: ID!
+  sender: Bytes!
+  token0: Bytes!
+  token1: Bytes!
+  pool: Bytes!
+  isJoin: Boolean!
+  amount0: BigInt!
+  amount1: BigInt!
+  feeAmount0: BigInt!
+  feeAmount1: BigInt!
 }

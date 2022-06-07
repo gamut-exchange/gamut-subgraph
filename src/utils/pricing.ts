@@ -1,14 +1,15 @@
 /* eslint-disable prefer-const */
-import { Pool as PoolABI } from "../types/templates/Pool/Pool"
+import { Pool as PoolABI } from "../../generated/templates/Pool/Pool"
 import { ONE_BD, ZERO_BD, ZERO_BI } from './constants'
-import { Bundle, Pool, Token } from './../types/schema'
+import { Bundle, Pool, Token } from '../../generated/schema'
 import { Address, BigDecimal, BigInt } from '@graphprotocol/graph-ts'
 import { exponentToBigDecimal, safeDiv } from '../utils/index'
+import { log } from '@graphprotocol/graph-ts'
 
-const TETH_ADDRESS = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
-const USDC_ADDRESS = '0x2a12B95Dba4383f2537901Df1f113bbd566A48D1'
-const DAI_ADDRESS = "0xEC3bE3f94B7E4bc635603537087c53355b180723"
-const USDC_TETH_POOL = '0x1719C44ca5bed9590c7D21e5144121eBF762196e'
+const TETH_ADDRESS = '0x0f3cd4d9cfc58aa42426fd7742837175ccea5918'
+const USDC_ADDRESS = '0x2a12b95dba4383f2537901df1f113bbd566a48d1'
+const DAI_ADDRESS = "0xec3be3f94b7e4bc635603537087c53355b180723"
+const USDC_TETH_POOL = '0x1719c44ca5bed9590c7d21e5144121ebf762196e'
 
 // token where amounts should contribute to tracked volume and liquidity
 // usually tokens that many tokens are paired with s
@@ -16,7 +17,7 @@ export let WHITELIST_TOKENS: string[] = [
   TETH_ADDRESS, // TETH
   USDC_ADDRESS, // USDC
   DAI_ADDRESS, // DAI
-  '0x1CbFD025Eb289b9c806A034cbD48d89234971700', // BTC
+  '0x1cbfd025eb289b9c806a034cbd48d89234971700', // BTC
 ]
 
 // let Q192 = 2 ** 192
@@ -32,85 +33,99 @@ export let WHITELIST_TOKENS: string[] = [
 //   return [price0, price1]
 // }
 
-export function getTokenPrices(poolAddress: Address, token0: Token, token1: Token):BigDecimal[] {
+export function getTokenPrices(poolAddress: Address, token0: Token, token1: Token): BigDecimal[] {
   let poolContract = PoolABI.bind(poolAddress);
-  let poolWeights = poolContract.getWeights();
-  let whiteList0 = token0.whitelistPools
-  let whiteList1 = token1.whitelistPools
+
+  let poolWeights = poolContract.getWeights()
+  let weight0 = poolWeights[0].toBigDecimal()
+  let weight1 = poolWeights[1].toBigDecimal()
+
+  let poolBalances = poolContract.getPoolBalancesAndChangeBlock()
+  let poolBalance0 = poolBalances.value0.toBigDecimal()
+  let poolBalance1 = poolBalances.value1.toBigDecimal()
+
+  // let whiteList0 = token0.whitelistPools
+  // let whiteList1 = token1.whitelistPools
+
+  // let bundle = Bundle.load('1')
+
+  let price0 = (poolBalance1.div(weight1)).div(poolBalance0.div(weight0))
+  let price1 = ONE_BD.div(price0)
+
+  // for (let i = 0; i < whiteList0.length; ++i) {
+
+  //   let unitPoolAddress = whiteList0[i]
+  //   let unitPool = Pool.load(unitPoolAddress)
+
+  //   if (unitPool.token0 == token0.id) {
+  //     if (unitPool.token0)
+  //   }
+  //   if(unitPool.token0 == USDC_ADDRESS || unitPool.token0 == DAI_ADDRESS) {
+  //     let price0 = unitPool.weight0.div(unitPool.weight1)
+  //     let price1 = poolWeights[1].toBigDecimal().div(poolWeights[0].toBigDecimal()).times(price0)
+  //     return [price0, price1]
+  //   }
+  //   if(unitPool.token0 == TETH_ADDRESS) {
+  //     let price0 = unitPool.weight0.div(unitPool.weight1).times(bundle.ethPriceUSD)
+  //     let price1 = poolWeights[1].toBigDecimal().div(poolWeights[0].toBigDecimal()).times(price0)
+  //     return [price0, price1]
+  //   }
+  //   if(unitPool.token1 == USDC_ADDRESS || unitPool.token1 == DAI_ADDRESS) {
+  //     let price0 = unitPool.weight1.div(unitPool.weight0)
+  //     let price1 = poolWeights[1].toBigDecimal().div(poolWeights[0].toBigDecimal()).times(price0)
+  //     return [price0, price1]
+  //   }
+  //   if(unitPool.token1 == TETH_ADDRESS) {
+  //     let price0 = unitPool.weight1.div(unitPool.weight0).times(bundle.ethPriceUSD)
+  //     let price1 = poolWeights[1].toBigDecimal().div(poolWeights[0].toBigDecimal()).times(price0)
+  //     return [price0, price1]
+  //   }
+  // }
+
+  return [price0, price1]
+}
+
+export function getTokenPrice(token: Token): BigDecimal {
   let bundle = Bundle.load('1')
-
-
-  if(token0.id === USDC_ADDRESS || token0.id === DAI_ADDRESS) {
-    let price0 = ONE_BD;
-    let price1 = poolWeights[1].div(poolWeights[0]).toBigDecimal()
-    return [price0, price1]
+  if (bundle === null) {
+    log.error('bundle is not existed', [])
+    return ZERO_BD
   }
-
-  if(token1.id === USDC_ADDRESS || token1.id === DAI_ADDRESS) {
-    let price1 = ONE_BD;
-    let price0 = poolWeights[0].div(poolWeights[1]).toBigDecimal()
-      return [price0, price1]
+  if (token.id == USDC_ADDRESS) {
+    return ONE_BD
   }
+  return token.derivedETH.times(bundle.ethPriceUSD)
+}
 
-  for (let i = 0; i < whiteList0.length; ++i) {
-    let unitPoolAddress = whiteList0[i]
-    let unitPool = Pool.load(unitPoolAddress)
-    if(unitPool.token0 === USDC_ADDRESS || unitPool.token0 === DAI_ADDRESS) {
-      let price0 = unitPool.weight0.div(unitPool.weight1)
-      let price1 = poolWeights[1].toBigDecimal().div(poolWeights[0].toBigDecimal()).times(price0)
-      return [price0, price1]
-    }
-    if(unitPool.token0 === TETH_ADDRESS) {
-      let price0 = unitPool.weight0.div(unitPool.weight1).times(bundle.ethPriceUSD)
-      let price1 = poolWeights[1].toBigDecimal().div(poolWeights[0].toBigDecimal()).times(price0)
-      return [price0, price1]
-    }
-    if(unitPool.token1 === USDC_ADDRESS || unitPool.token1 === DAI_ADDRESS) {
-      let price0 = unitPool.weight1.div(unitPool.weight0)
-      let price1 = poolWeights[1].toBigDecimal().div(poolWeights[0].toBigDecimal()).times(price0)
-      return [price0, price1]
-    }
-    if(unitPool.token1 === TETH_ADDRESS) {
-      let price0 = unitPool.weight1.div(unitPool.weight0).times(bundle.ethPriceUSD)
-      let price1 = poolWeights[1].toBigDecimal().div(poolWeights[0].toBigDecimal()).times(price0)
-      return [price0, price1]
-    }
-  }
+export function getTokenRatio(poolAddress: Address, token0: Token, token1: Token): BigDecimal {
+  let poolContract = PoolABI.bind(poolAddress);
 
-  for (let i = 0; i < whiteList1.length; ++i) {
-    let unitPoolAddress = whiteList1[i]
-    let unitPool = Pool.load(unitPoolAddress)
-    if(unitPool.token0 === USDC_ADDRESS || unitPool.token0 === DAI_ADDRESS) {
-      let price1 = unitPool.weight0.div(unitPool.weight1)
-      let price0 = poolWeights[0].toBigDecimal().div(poolWeights[1].toBigDecimal()).times(price1)
-      return [price0, price1]
-    }
-    if(unitPool.token0 === TETH_ADDRESS) {
-      let price1 = unitPool.weight0.div(unitPool.weight1).times(bundle.ethPriceUSD)
-      let price0 = poolWeights[0].toBigDecimal().div(poolWeights[1].toBigDecimal()).times(price1)
-      return [price0, price1]
-    }
-    if(unitPool.token1 === USDC_ADDRESS || unitPool.token1 === DAI_ADDRESS) {
-      let price1 = unitPool.weight1.div(unitPool.weight0)
-      let price0 = poolWeights[0].toBigDecimal().div(poolWeights[1].toBigDecimal()).times(price1)
-      return [price0, price1]
-    }
-    if(unitPool.token1 === TETH_ADDRESS) {
-      let price1 = unitPool.weight1.div(unitPool.weight0).times(bundle.ethPriceUSD)
-      let price0 = poolWeights[0].toBigDecimal().div(poolWeights[1].toBigDecimal()).times(price1)
-      return [price0, price1]
-    }
-  }
+  let poolWeights = poolContract.getWeights()
+  let weight0 = poolWeights[0].toBigDecimal()
+  let weight1 = poolWeights[1].toBigDecimal()
 
-  return [ZERO_BD, ZERO_BD]
+  let poolBalances = poolContract.getPoolBalancesAndChangeBlock()
+  let poolBalance0 = poolBalances.value0.toBigDecimal()
+  let poolBalance1 = poolBalances.value1.toBigDecimal()
 
+  // let whiteList0 = token0.whitelistPools
+  // let whiteList1 = token1.whitelistPools
+
+  // let bundle = Bundle.load('1')
+
+  return (poolBalance1.div(weight1)).div(poolBalance0.div(weight0))
 }
 
 export function getEthPriceInUSD(): BigDecimal {
   // fetch eth prices for each stablecoin
   let usdcPool = Pool.load(USDC_TETH_POOL) // dai is token0
-  if (usdcPool !== null) {
-    return usdcPool.token0Price
+
+  let poolContract = PoolABI.bind(Address.fromString(USDC_TETH_POOL))
+  let poolBalances = poolContract.getPoolBalancesAndChangeBlock()
+  let poolBalance0 = poolBalances.value0.toBigDecimal()
+  let poolBalance1 = poolBalances.value1.toBigDecimal()
+  if (usdcPool !== null && usdcPool.weight1.gt(BigDecimal.fromString('0'))) {
+    return (poolBalance1.div(usdcPool.weight1)).div(poolBalance0.div(usdcPool.weight0))
   } else {
     return ZERO_BD
   }
@@ -132,26 +147,46 @@ export function findEthPerToken(token: Token): BigDecimal {
   for (let i = 0; i < whiteList.length; ++i) {
     let poolAddress = whiteList[i]
     let pool = Pool.load(poolAddress)
+    if (pool === null) {
+      log.error('pool is not existed', [])
+      return ZERO_BD
+    }
     if (pool.liquidity.gt(ZERO_BI)) {
       if (pool.token0 == token.id) {
         // whitelist token is token1
         let token1 = Token.load(pool.token1)
+        if (token1 === null) {
+          log.error('token is not existed', [])
+          return ZERO_BD
+        }
+        let token1DerivedETH = token1.derivedETH
+        if (token1DerivedETH == ZERO_BD && token1.id == TETH_ADDRESS) {
+          token1DerivedETH = ONE_BD
+        }
         // get the derived ETH in pool
-        let ethLocked = pool.totalValueLockedToken1.times(token1.derivedETH)
+        let ethLocked = pool.totalValueLockedToken1.times(token1DerivedETH)
         if (ethLocked.gt(largestLiquidityETH)) {
           largestLiquidityETH = ethLocked
           // token1 per our token * Eth per token1
-          priceSoFar = pool.token1Price.times(token1.derivedETH as BigDecimal)
+          priceSoFar = token1DerivedETH.times(pool.ratio)
         }
       }
       if (pool.token1 == token.id) {
         let token0 = Token.load(pool.token0)
+        if (token0 === null) {
+          log.error('token is not existed', [])
+          return ZERO_BD
+        }
+        let token0DerivedETH = token0.derivedETH
+        if (token0DerivedETH == ZERO_BD && token0.id == TETH_ADDRESS) {
+          token0DerivedETH = ONE_BD
+        }
         // get the derived ETH in pool
-        let ethLocked = pool.totalValueLockedToken0.times(token0.derivedETH)
+        let ethLocked = pool.totalValueLockedToken0.times(token0DerivedETH)
         if (ethLocked.gt(largestLiquidityETH)) {
           largestLiquidityETH = ethLocked
           // token0 per our token * ETH per token0
-          priceSoFar = pool.token0Price.times(token0.derivedETH as BigDecimal)
+          priceSoFar = token0DerivedETH.div(pool.ratio)
         }
       }
     }
@@ -172,6 +207,10 @@ export function getTrackedAmountUSD(
   token1: Token
 ): BigDecimal {
   let bundle = Bundle.load('1')
+  if (bundle === null) {
+    log.error('bundle is not existed', [])
+    return ZERO_BD
+  }
   let price0USD = token0.derivedETH.times(bundle.ethPriceUSD)
   let price1USD = token1.derivedETH.times(bundle.ethPriceUSD)
 

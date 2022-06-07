@@ -1,26 +1,26 @@
 {
-  "name": "gamut-v3-subgraph",
-  "version": "1.0.0",
-  "repository": "https://github.com/graphprotocol/gamut-v3-subgraph",
-  "license": "GPL-3.0-or-later",
+  "name": "example",
+  "version": "0.1.0",
+  "repository": "https://github.com/enjoylife420/examplesubgraph",
+  "license": "MIT",
   "scripts": {
-    "codegen": "graph codegen --output-dir src/types/",
+    "build-contract": "solc contracts/Gravity.sol --abi -o abis --overwrite && solc contracts/Gravity.sol --bin -o bin --overwrite",
+    "create": "graph create example --node https://api.thegraph.com/deploy/",
+    "create-local": "graph create example --node http://127.0.0.1:8020",
+    "codegen": "graph codegen",
     "build": "graph build",
-    "create-local": "graph create kmkoushik/gamut-v3-ropsten --node http://127.0.0.1:8020",
-    "deploy-local": "graph deploy kmkoushik/gamut-v3-ropsten --debug --ipfs http://localhost:5001 --node http://127.0.0.1:8020",
-    "deploy": "graph deploy kmkoushik/gamut-v3-ropsten --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/ --debug"
+    "deploy": "graph deploy enjoylife420/ropsten-project --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/",
+    "deploy-local": "graph deploy example --ipfs http://127.0.0.1:5001 --node http://127.0.0.1:8020"
   },
   "devDependencies": {
-    "@graphprotocol/graph-cli": "^0.20.0",
-    "@graphprotocol/graph-ts": "^0.20.0",
-    "@typescript-eslint/eslint-plugin": "^2.0.0",
-    "@typescript-eslint/parser": "^2.0.0",
-    "eslint": "^6.2.2",
-    "eslint-config-prettier": "^6.1.0",
-    "prettier": "^1.18.2",
-    "typescript": "^3.5.2"
+    "@graphprotocol/graph-cli": "^0.30.2",
+    "@graphprotocol/graph-ts": "^0.27.0"
   },
-  "resolutions": {
-    "assemblyscript": "git+https://github.com/AssemblyScript/assemblyscript.git#v0.6"
+  "dependencies": {
+    "babel-polyfill": "^6.26.0",
+    "babel-register": "^6.26.0",
+    "truffle": "^5.0.4",
+    "truffle-contract": "^4.0.5",
+    "truffle-hdwallet-provider": "^1.0.4"
   }
 }

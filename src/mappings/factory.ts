@@ -1,16 +1,20 @@
 import { WHITELIST_TOKENS } from './../utils/pricing'
 /* eslint-disable prefer-const */
 import { FACTORY_ADDRESS, ZERO_BI, ONE_BI, ZERO_BD, ADDRESS_ZERO } from './../utils/constants'
-import { Factory } from '../types/schema'
-import { PoolCreated } from '../types/Factory/Factory'
-import { Pool, Token, Bundle } from '../types/schema'
-import { Pool as PoolTemplate } from '../types/templates'
+import { Factory } from '../../generated/schema'
+import { PoolCreated } from '../../generated/Factory/Factory'
+import { Pool, Token, Bundle } from '../../generated/schema'
+import { Pool as PoolTemplate } from '../../generated/templates'
 import { fetchTokenSymbol, fetchTokenName, fetchTokenTotalSupply, fetchTokenDecimals } from '../utils/token'
 import { log, Address } from '@graphprotocol/graph-ts'
 
 export function handlePoolCreated(event: PoolCreated): void {
   // temp fix
   if (event.params.pool == Address.fromHexString('0x8fe8d9bb8eeba3ed688069c3d6b556c9ca258248')) {
+    return
+  }
+
+  if (event.params.pool == Address.fromHexString('0x085fa346fd4b3f67c9784148a2778f5785ab22cc')) {
     return
   }
 
@@ -131,6 +135,7 @@ export function handlePoolCreated(event: PoolCreated): void {
   pool.volumeUSD = ZERO_BD
   pool.feesUSD = ZERO_BD
   pool.untrackedVolumeUSD = ZERO_BD
+  pool.ratio = ZERO_BD
 
   pool.collectedFeesToken0 = ZERO_BD
   pool.collectedFeesToken1 = ZERO_BD
