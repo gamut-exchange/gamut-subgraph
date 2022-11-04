@@ -8,21 +8,21 @@ type Factory @entity {
   # total volume all time in derived USD
   totalVolumeUSD: BigDecimal!
   # total volume all time in derived ETH
-  totalVolumeETH: BigDecimal!
+  totalVolumeBTC: BigDecimal!
   # total swap fees all time in USD
   totalFeesUSD: BigDecimal!
   # total swap fees all time in USD
-  totalFeesETH: BigDecimal!
+  totalFeesBTC: BigDecimal!
   # all volume even through less reliable USD values
   untrackedVolumeUSD: BigDecimal!
   # TVL derived in USD
   totalValueLockedUSD: BigDecimal!
   # TVL derived in ETH
-  totalValueLockedETH: BigDecimal!
+  totalValueLockedBTC: BigDecimal!
   # TVL derived in USD untracked
   totalValueLockedUSDUntracked: BigDecimal!
   # TVL derived in ETH untracked
-  totalValueLockedETHUntracked: BigDecimal!
+  totalValueLockedBTCUntracked: BigDecimal!
 
   # current owner of the factory
   owner: ID!
@@ -32,7 +32,7 @@ type Factory @entity {
 type Bundle @entity {
   id: ID!
   # price of ETH in usd
-  ethPriceUSD: BigDecimal!
+  btcPriceUSD: BigDecimal!
 }
 
 type Token @entity {
@@ -65,7 +65,7 @@ type Token @entity {
   # TVL derived in USD untracked
   totalValueLockedUSDUntracked: BigDecimal!
   # derived price in ETH
-  derivedETH: BigDecimal!
+  derivedBTC: BigDecimal!
   # pools token is in that are white listed for USD pricing
   whitelistPools: [Pool!]!
   # derived fields
@@ -90,9 +90,7 @@ type Pool @entity {
   # fee amount
   feeTier: BigInt!
   # in range liquidity
-  liquidity: BigInt!
-  # token0 / token1
-  ratio: BigDecimal!
+  liquidity: BigDecimal!
   # token0 per token1
   token0Price: BigDecimal!
   # token1 per token0
@@ -124,7 +122,7 @@ type Pool @entity {
   # total token 1 across all ticks
   totalValueLockedToken1: BigDecimal!
   # tvl derived ETH
-  totalValueLockedETH: BigDecimal!
+  totalValueLockedBTC: BigDecimal!
   # tvl USD
   totalValueLockedUSD: BigDecimal!
   # TVL derived in USD untracked
@@ -145,7 +143,7 @@ type Transaction @entity {
   # timestamp txn was confirmed
   timestamp: BigInt!
   # gas used during txn execution
-  # gasUsed: BigInt!
+  gasLimit: BigInt!
   gasPrice: BigInt!
 }
 
@@ -165,9 +163,7 @@ type Swap @entity {
   # sender of the swap
   sender: Bytes!
   # recipient of the swap
-  recipient: Bytes
-  # txn origin
-  origin: Bytes # the EOA that initiated the txn
+  recipient: Bytes!
   # delta of token0 swapped
   amount0: BigDecimal!
   # delta of token1 swapped
@@ -193,18 +189,17 @@ type Join @entity {
   token1: Token!
   # the address that joined the liquidity
   sender: Bytes
-  # txn origin
-  origin: Bytes # the EOA that initiated the txn
+  # the address that receive liquidity token
+  receiver: Bytes
   # amount of liquidity joined
-  amount: BigDecimal!
-  # amount of token 0 joined
-  amount0: BigDecimal!
-  # amount of token 1 joined
-  amount1: BigDecimal!
-  # derived amount based on available prices of tokens
+  balances: [BigInt!]
+  protocolSwapFeePercentage: BigInt
+  amountsIn: [BigInt!]
+  protocolSwapFeeAmount: [BigInt!]
+  userData: Bytes
   amountUSD: BigDecimal
-  # order within the txn
   logIndex: BigInt
+  liquidity: BigDecimal
 }
 
 type Exit @entity {
@@ -220,20 +215,20 @@ type Exit @entity {
   token1: Token!
   # the address that exited the liquidity
   sender: Bytes
+  # the address that receive liquidity token
+  receiver: Bytes
   # need this to pull recent txns for specific token or pool
   timestamp: BigInt!
   # txn origin
-  origin: Bytes # the EOA that initiated the txn
   # amouny of liquidity exited
-  amount: BigDecimal!
-  # amount of token 0 exited
-  amount0: BigDecimal!
-  # amount of token 1 exited
-  amount1: BigDecimal!
-  # derived amount based on available prices of tokens
+  balances: [BigInt!]
+  protocolSwapFeePercentage: BigInt
+  value0: [BigInt!]
+  value1: [BigInt!]
+  userData: Bytes
   amountUSD: BigDecimal
-  # position within the transactions
   logIndex: BigInt
+  liquidity: BigDecimal
 }
 
 # Data accumulated and condensed into day stats for all of Gamut
@@ -243,7 +238,7 @@ type GamutDayData @entity {
   # timestamp rounded to current day by dividing by 86400
   date: Int!
   # total daily volume in Gamut derived in terms of ETH
-  volumeETH: BigDecimal!
+  volumeBTC: BigDecimal!
   # total daily volume in Gamut derived in terms of USD
   volumeUSD: BigDecimal!
   # total daily volume in Gamut derived in terms of USD untracked
@@ -261,16 +256,17 @@ type PoolDayData @entity {
   # timestamp rounded to current day by dividing by 86400
   id: ID!
   # timestamp rounded to current day by dividing by 86400
-  date: Int!
+  date: BigInt!
   # pointer to pool
   pool: Pool!
   # in range liquidity at end of period
-  liquidity: BigInt!
+  liquidity: BigDecimal!
+  liquidityUSD: BigDecimal!
   # price of token0 - derived from sqrtPrice
   token0Price: BigDecimal!
   # price of token1 - derived from sqrtPrice
   token1Price: BigDecimal!
-  tvlUSD: BigDecimal
+  tvlUSD: BigDecimal!
   # volume in token0
   volumeToken0: BigDecimal!
   # volume in token1
@@ -300,7 +296,7 @@ type PoolHourData @entity {
   # pointer to pool
   pool: Pool!
   # in range liquidity at end of period
-  liquidity: BigInt!
+  liquidity: BigDecimal!
   # price of token0 - derived from sqrtPrice
   token0Price: BigDecimal!
   # price of token1 - derived from sqrtPrice
@@ -390,7 +386,7 @@ type TokenHourData @entity {
   close: BigDecimal!
 }
 
-type SwapData @entity {
+type SwapEvent @entity {
   # Router address
   id: ID!
   # address of token received
@@ -406,7 +402,7 @@ type SwapData @entity {
   # sender address
   sender: Bytes!
   # pool address
-  pool: Bytes!
+  # pool: Bytes!
   # block hash
   block: Bytes!
   # timestamp of transaction
@@ -415,15 +411,22 @@ type SwapData @entity {
   transaction: Bytes!
 }
 
-type JoinExitPoolData @entity {
+type WeightBalanceData @entity {
   id: ID!
-  sender: Bytes!
-  token0: Bytes!
-  token1: Bytes!
-  pool: Bytes!
-  isJoin: Boolean!
-  amount0: BigInt!
-  amount1: BigInt!
-  feeAmount0: BigInt!
-  feeAmount1: BigInt!
+  timestamp: BigInt!
+  weight0: BigDecimal!
+  weight1: BigDecimal!
+  pool: Pool!
+  token0: Token!
+  token1: Token!
+}
+
+type PoolTokensPrice @entity {
+  id: ID!
+  timestamp: BigInt!
+  token0Price: BigDecimal!
+  token1Price: BigDecimal!
+  pool: Pool!
+  token0: Token!
+  token1: Token!
 }

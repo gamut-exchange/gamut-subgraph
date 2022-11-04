@@ -2,7 +2,6 @@
 import { BigInt, BigDecimal, ethereum } from '@graphprotocol/graph-ts'
 import { Transaction } from '../../generated/schema'
 import { ONE_BI, ZERO_BI, ZERO_BD, ONE_BD } from '../utils/constants'
-import { Swap as SwapEvent } from '../../generated/Router/Router'
 
 export function exponentToBigDecimal(decimals: BigInt): BigDecimal {
   let bd = BigDecimal.fromString('1')
@@ -78,18 +77,6 @@ export function convertEthToDecimal(eth: BigInt): BigDecimal {
   return eth.toBigDecimal().div(exponentToBigDecimal(BigInt.fromString('18')))
 }
 
-export function loadTransactionFromEvent(_transaction: ethereum.Transaction, block: ethereum.Block): Transaction {
-  let transaction = Transaction.load(_transaction.hash.toHexString())
-  if (transaction === null) {
-    transaction = new Transaction(_transaction.hash.toHexString())
-  }
-  transaction.blockNumber = block.number
-  transaction.timestamp = block.timestamp
-  transaction.gasPrice = _transaction.gasPrice
-  transaction.save()
-  return transaction as Transaction
-}
-
 export function loadTransaction(call: ethereum.Call): Transaction {
   let transaction = Transaction.load(call.transaction.hash.toHexString())
   if (transaction === null) {
@@ -97,6 +84,7 @@ export function loadTransaction(call: ethereum.Call): Transaction {
   }
   transaction.blockNumber = call.block.number
   transaction.timestamp = call.block.timestamp
+  transaction.gasLimit = call.transaction.gasLimit
   transaction.gasPrice = call.transaction.gasPrice
   transaction.save()
   return transaction as Transaction

@@ -10,34 +10,30 @@ import { log, Address } from '@graphprotocol/graph-ts'
 
 export function handlePoolCreated(event: PoolCreated): void {
   // temp fix
-  if (event.params.pool == Address.fromHexString('0x8fe8d9bb8eeba3ed688069c3d6b556c9ca258248')) {
-    return
-  }
-
-  if (event.params.pool == Address.fromHexString('0x085fa346fd4b3f67c9784148a2778f5785ab22cc')) {
-    return
-  }
+  // if (event.params.pool == Address.fromHexString('0x8fe8d9bb8eeba3ed688069c3d6b556c9ca258248')) {
+  //   return
+  // }
 
   // load factory
   let factory = Factory.load(FACTORY_ADDRESS)
   if (factory === null) {
     factory = new Factory(FACTORY_ADDRESS)
     factory.poolCount = ZERO_BI
-    factory.totalVolumeETH = ZERO_BD
+    factory.totalVolumeBTC = ZERO_BD
     factory.totalVolumeUSD = ZERO_BD
     factory.untrackedVolumeUSD = ZERO_BD
     factory.totalFeesUSD = ZERO_BD
-    factory.totalFeesETH = ZERO_BD
-    factory.totalValueLockedETH = ZERO_BD
+    factory.totalFeesBTC = ZERO_BD
+    factory.totalValueLockedBTC = ZERO_BD
     factory.totalValueLockedUSD = ZERO_BD
     factory.totalValueLockedUSDUntracked = ZERO_BD
-    factory.totalValueLockedETHUntracked = ZERO_BD
+    factory.totalValueLockedBTCUntracked = ZERO_BD
     factory.txCount = ZERO_BI
     factory.owner = ADDRESS_ZERO
 
     // create new bundle for tracking eth price
     let bundle = new Bundle('1')
-    bundle.ethPriceUSD = ZERO_BD
+    bundle.btcPriceUSD = ZERO_BD
     bundle.save()
   }
 
@@ -62,7 +58,7 @@ export function handlePoolCreated(event: PoolCreated): void {
     }
 
     token0.decimals = decimals
-    token0.derivedETH = ZERO_BD
+    token0.derivedBTC = ZERO_BD
     token0.volume = ZERO_BD
     token0.volumeUSD = ZERO_BD
     token0.feesUSD = ZERO_BD
@@ -87,7 +83,7 @@ export function handlePoolCreated(event: PoolCreated): void {
       return
     }
     token1.decimals = decimals
-    token1.derivedETH = ZERO_BD
+    token1.derivedBTC = ZERO_BD
     token1.volume = ZERO_BD
     token1.volumeUSD = ZERO_BD
     token1.untrackedVolumeUSD = ZERO_BD
@@ -121,21 +117,20 @@ export function handlePoolCreated(event: PoolCreated): void {
   pool.createdAtBlockNumber = event.block.number
   pool.liquidityProviderCount = ZERO_BI
   pool.txCount = ZERO_BI
-  pool.liquidity = ZERO_BI
+  pool.liquidity = ZERO_BD
   pool.token0Price = ZERO_BD
   pool.token1Price = ZERO_BD
   pool.observationIndex = ZERO_BI
   pool.totalValueLockedToken0 = ZERO_BD
   pool.totalValueLockedToken1 = ZERO_BD
   pool.totalValueLockedUSD = ZERO_BD
-  pool.totalValueLockedETH = ZERO_BD
+  pool.totalValueLockedBTC = ZERO_BD
   pool.totalValueLockedUSDUntracked = ZERO_BD
   pool.volumeToken0 = ZERO_BD
   pool.volumeToken1 = ZERO_BD
   pool.volumeUSD = ZERO_BD
   pool.feesUSD = ZERO_BD
   pool.untrackedVolumeUSD = ZERO_BD
-  pool.ratio = ZERO_BD
 
   pool.collectedFeesToken0 = ZERO_BD
   pool.collectedFeesToken1 = ZERO_BD

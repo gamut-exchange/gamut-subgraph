@@ -1,0 +1,10 @@
+{
+  "goerli": {
+    "factory": {
+      "address": "0xbbd5D17B9aC782709724e16B3ABafB69a4913B09"
+    },
+    "router": {
+      "address": "0x297B6caC6AAe8A4eEE69319681359bBab19df555"
+    }
+  }
+}

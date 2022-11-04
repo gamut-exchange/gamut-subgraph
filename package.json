@@ -1,26 +1,24 @@
 {
-  "name": "example",
-  "version": "0.1.0",
-  "repository": "https://github.com/enjoylife420/examplesubgraph",
-  "license": "MIT",
+  "name": "gamut-ropsten",
+  "license": "UNLICENSED",
   "scripts": {
-    "build-contract": "solc contracts/Gravity.sol --abi -o abis --overwrite && solc contracts/Gravity.sol --bin -o bin --overwrite",
-    "create": "graph create example --node https://api.thegraph.com/deploy/",
-    "create-local": "graph create example --node http://127.0.0.1:8020",
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy enjoylife420/ropsten-project --ipfs https://api.thegraph.com/ipfs/ --node https://api.thegraph.com/deploy/",
-    "deploy-local": "graph deploy example --ipfs http://127.0.0.1:5001 --node http://127.0.0.1:8020"
-  },
-  "devDependencies": {
-    "@graphprotocol/graph-cli": "^0.30.2",
-    "@graphprotocol/graph-ts": "^0.27.0"
+    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ enjoydream420/gamut-ropsten",
+    "create-local": "graph create --node http://localhost:8020/ enjoydream420/gamut-ropsten",
+    "remove-local": "graph remove --node http://localhost:8020/ enjoydream420/gamut-ropsten",
+    "deploy-local": "graph deploy  --access-token 342da72ccae8751f3b59a0a3b48129ed --node http://localhost:8020/ --ipfs http://localhost:5001 enjoydream420/gamut-ropsten",
+    "test": "graph test"
   },
   "dependencies": {
-    "babel-polyfill": "^6.26.0",
-    "babel-register": "^6.26.0",
-    "truffle": "^5.0.4",
-    "truffle-contract": "^4.0.5",
-    "truffle-hdwallet-provider": "^1.0.4"
-  }
+    "@graphprotocol/graph-cli": "0.35.0",
+    "@graphprotocol/graph-ts": "0.28.1",
+    "@typescript-eslint/eslint-plugin": "^2.0.0",
+    "@typescript-eslint/parser": "^2.0.0",
+    "eslint": "^6.2.2",
+    "eslint-config-prettier": "^6.1.0",
+    "prettier": "^1.18.2",
+    "typescript": "^3.5.2"
+  },
+  "devDependencies": { "matchstick-as": "0.5.0" }
 }
