@@ -8,21 +8,21 @@ type Factory @entity {
   # total volume all time in derived USD
   totalVolumeUSD: BigDecimal!
   # total volume all time in derived ETH
-  totalVolumeBTC: BigDecimal!
+  totalVolumeKAVA: BigDecimal!
   # total swap fees all time in USD
   totalFeesUSD: BigDecimal!
   # total swap fees all time in USD
-  totalFeesBTC: BigDecimal!
+  totalFeesKAVA: BigDecimal!
   # all volume even through less reliable USD values
   untrackedVolumeUSD: BigDecimal!
   # TVL derived in USD
   totalValueLockedUSD: BigDecimal!
   # TVL derived in ETH
-  totalValueLockedBTC: BigDecimal!
+  totalValueLockedKAVA: BigDecimal!
   # TVL derived in USD untracked
   totalValueLockedUSDUntracked: BigDecimal!
   # TVL derived in ETH untracked
-  totalValueLockedBTCUntracked: BigDecimal!
+  totalValueLockedKAVAUntracked: BigDecimal!
 
   # current owner of the factory
   owner: ID!
@@ -32,7 +32,7 @@ type Factory @entity {
 type Bundle @entity {
   id: ID!
   # price of ETH in usd
-  btcPriceUSD: BigDecimal!
+  KAVAPriceUSD: BigDecimal!
 }
 
 type Token @entity {
@@ -122,7 +122,7 @@ type Pool @entity {
   # total token 1 across all ticks
   totalValueLockedToken1: BigDecimal!
   # tvl derived ETH
-  totalValueLockedBTC: BigDecimal!
+  totalValueLockedKAVA: BigDecimal!
   # tvl USD
   totalValueLockedUSD: BigDecimal!
   # TVL derived in USD untracked
@@ -144,32 +144,34 @@ type Transaction @entity {
   timestamp: BigInt!
   # gas used during txn execution
   gasLimit: BigInt!
-  gasPrice: BigInt!
+  gasPrice: BigInt
 }
 
 type Swap @entity {
   # transaction hash + "#" + index in swaps Transaction array
   id: ID!
+  block: BigInt
   # pointer to transaction
-  transaction: Transaction!
+  transaction: Transaction
   # timestamp of transaction
-  timestamp: BigInt!
+  timestamp: BigInt
   # pool swap occured within
-  pool: Pool!
+  pool: Pool
   # allow indexing by tokens
-  token0: Token!
+  token0: Token
   # allow indexing by tokens
-  token1: Token!
+  token1: Token
   # sender of the swap
-  sender: Bytes!
+  sender: Bytes
   # recipient of the swap
-  recipient: Bytes!
+  recipient: Bytes
   # delta of token0 swapped
-  amount0: BigDecimal!
+  amount0: BigDecimal
   # delta of token1 swapped
-  amount1: BigDecimal!
+  amount1: BigDecimal
   # derived info
-  amountUSD: BigDecimal!
+  amountUSD: BigDecimal
+  protocolSwapFeeAmount: BigInt
   # index within the txn
   logIndex: BigInt
 }
@@ -191,12 +193,9 @@ type Join @entity {
   sender: Bytes
   # the address that receive liquidity token
   receiver: Bytes
-  # amount of liquidity joined
-  balances: [BigInt!]
   protocolSwapFeePercentage: BigInt
   amountsIn: [BigInt!]
   protocolSwapFeeAmount: [BigInt!]
-  userData: Bytes
   amountUSD: BigDecimal
   logIndex: BigInt
   liquidity: BigDecimal
@@ -223,9 +222,8 @@ type Exit @entity {
   # amouny of liquidity exited
   balances: [BigInt!]
   protocolSwapFeePercentage: BigInt
-  value0: [BigInt!]
-  value1: [BigInt!]
-  userData: Bytes
+  amountsOut: [BigInt!]
+  protocolSwapFeeAmount: [BigInt!]
   amountUSD: BigDecimal
   logIndex: BigInt
   liquidity: BigDecimal
@@ -384,31 +382,6 @@ type TokenHourData @entity {
   low: BigDecimal!
   # close price USD
   close: BigDecimal!
-}
-
-type SwapEvent @entity {
-  # Router address
-  id: ID!
-  # address of token received
-  tokenIn: Bytes!
-  # address of token sent
-  tokenOut: Bytes!
-  # amount of token received
-  amountIn: BigInt!
-  # amount of token sent
-  amountOut: BigInt!
-  # swap fee amount of pool
-  protocolSwapFeeAmount: BigInt!
-  # sender address
-  sender: Bytes!
-  # pool address
-  # pool: Bytes!
-  # block hash
-  block: Bytes!
-  # timestamp of transaction
-  timestamp: BigInt!
-  # transaction hash
-  transaction: Bytes!
 }
 
 type WeightBalanceData @entity {

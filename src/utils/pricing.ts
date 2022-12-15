@@ -5,17 +5,19 @@ import { Bundle, Pool, Token } from '../../generated/schema'
 import { Address, BigDecimal, BigInt, log } from '@graphprotocol/graph-ts'
 import { exponentToBigDecimal, safeDiv, tokenAmountToDecimal } from '../utils/index'
 
-const TBTC_ADDRESS = '0xb0de0355020065b9c05f336b8a267b3cef69262e'
-const USDT_ADDRESS = '0x3346b2a939aa13e76ce8aa05eccae92e0d4f6580'
-const DAI_ADDRESS = "0x817f61606b7f073854c51ec93bef408708a5b4e4"
-const DAI_TBTC_POOL = '0x362b81498cf2eedeaee54e7b0215eeca8440b974'
+const KAVA_ADDRESS = '0xc86c7c0efbd6a49b35e8714c5f59d99de09a225b'
+const DAI_ADDRESS = '0x765277eebeca2e31912c9946eae1021199b39c61'
+const GBUSD_ADDRESS = "0x332730a4f6e03d9c55829435f10360e13cfa41ff"
+const GBUSD_KAVA_POOL = '0x6be57618c8832ad25cceadf2745d5c92de7ab7b2'
+// const WBTC_ADDRESS = '0x818ec0a7fe18ff94269904fced6ae3dae6d6dc0b'
 
 // token where amounts should contribute to tracked volume and liquidity
 // usually tokens that many tokens are paired with s
 export let WHITELIST_TOKENS: string[] = [
-  TBTC_ADDRESS, // TBTC
-  USDT_ADDRESS, // USDT
-  DAI_ADDRESS, // DAI
+  KAVA_ADDRESS,
+  GBUSD_ADDRESS,
+  DAI_ADDRESS,
+  // WBTC_ADDRESS
 ]
 
 // let Q192 = 2 ** 192
@@ -43,13 +45,13 @@ export function getTokenPrices(poolAddress: Address, token0: Token, token1: Toke
     return [ZERO_BD, ZERO_BD]
   }
 
-  if(token0.id == DAI_ADDRESS) {
+  if(token0.id == GBUSD_ADDRESS) {
     let price0 = ONE_BD;
     let price1 = tokenAmountToDecimal(poolBalances.getBalance0(), token0.decimals).div(poolWeights[0].toBigDecimal()).div(tokenAmountToDecimal(poolBalances.getBalance1(), token1.decimals).div(poolWeights[1].toBigDecimal()))
     return [price0, price1]
   }
 
-  if(token1.id == DAI_ADDRESS) {
+  if(token1.id == GBUSD_ADDRESS) {
     let price1 = ONE_BD;
     let price0 = tokenAmountToDecimal(poolBalances.getBalance1(), token1.decimals).div(poolWeights[1].toBigDecimal()).div(tokenAmountToDecimal(poolBalances.getBalance0(), token0.decimals).div(poolWeights[0].toBigDecimal()))
       return [price0, price1]
@@ -59,22 +61,22 @@ export function getTokenPrices(poolAddress: Address, token0: Token, token1: Toke
     let unitPoolAddress = whiteList0[i]
     let unitPool = Pool.load(unitPoolAddress)
     if (unitPool) {
-      if(unitPool.token0 == DAI_ADDRESS) {
+      if(unitPool.token0 == GBUSD_ADDRESS) {
         let price0 = unitPool.token1Price
         let price1 = tokenAmountToDecimal(poolBalances.getBalance0(), token0.decimals).div(poolWeights[0].toBigDecimal()).div(tokenAmountToDecimal(poolBalances.getBalance1(), token1.decimals).div(poolWeights[1].toBigDecimal())).times(price0)
         return [price0, price1]
       }
-      if(unitPool.token0 == TBTC_ADDRESS) {
+      if(unitPool.token0 == KAVA_ADDRESS) {
         let price0 = unitPool.token1Price
         let price1 = tokenAmountToDecimal(poolBalances.getBalance0(), token0.decimals).div(poolWeights[0].toBigDecimal()).div(tokenAmountToDecimal(poolBalances.getBalance1(), token1.decimals).div(poolWeights[1].toBigDecimal()))
         return [price0, price1]
       }
-      if(unitPool.token1 == DAI_ADDRESS) {
+      if(unitPool.token1 == GBUSD_ADDRESS) {
         let price0 = unitPool.token0Price
         let price1 = tokenAmountToDecimal(poolBalances.getBalance0(), token0.decimals).div(poolWeights[0].toBigDecimal()).div(tokenAmountToDecimal(poolBalances.getBalance1(), token1.decimals).div(poolWeights[1].toBigDecimal()))
         return [price0, price1]
       }
-      if(unitPool.token1 == TBTC_ADDRESS) {
+      if(unitPool.token1 == KAVA_ADDRESS) {
         let price0 = unitPool.token0Price
         let price1 = tokenAmountToDecimal(poolBalances.getBalance0(), token0.decimals).div(poolWeights[0].toBigDecimal()).div(tokenAmountToDecimal(poolBalances.getBalance1(), token1.decimals).div(poolWeights[1].toBigDecimal()))
         return [price0, price1]
@@ -86,22 +88,22 @@ export function getTokenPrices(poolAddress: Address, token0: Token, token1: Toke
     let unitPoolAddress = whiteList1[i]
     let unitPool = Pool.load(unitPoolAddress)
     if (unitPool) {
-      if(unitPool.token0 === DAI_ADDRESS) {
+      if(unitPool.token0 == GBUSD_ADDRESS) {
         let price1 = unitPool.token1Price
         let price0 = tokenAmountToDecimal(poolBalances.getBalance1(), token1.decimals).div(poolWeights[1].toBigDecimal()).div(tokenAmountToDecimal(poolBalances.getBalance0(), token0.decimals).div(poolWeights[0].toBigDecimal()))
         return [price0, price1]
       }
-      if(unitPool.token0 === TBTC_ADDRESS) {
+      if(unitPool.token0 == KAVA_ADDRESS) {
         let price1 = unitPool.token1Price
         let price0 = poolBalances.getBalance1().times(poolWeights[0]).div(poolBalances.getBalance0().times(poolWeights[1])).toBigDecimal().times(price1)
         return [price0, price1]
       }
-      if(unitPool.token1 === DAI_ADDRESS) {
+      if(unitPool.token1 == GBUSD_ADDRESS) {
         let price1 = unitPool.token0Price
         let price0 = tokenAmountToDecimal(poolBalances.getBalance1(), token1.decimals).div(poolWeights[1].toBigDecimal()).div(tokenAmountToDecimal(poolBalances.getBalance0(), token0.decimals).div(poolWeights[0].toBigDecimal()))
         return [price0, price1]
       }
-      if(unitPool.token1 === TBTC_ADDRESS) {
+      if(unitPool.token1 == KAVA_ADDRESS) {
         let price1 = unitPool.token0Price
         let price0 = tokenAmountToDecimal(poolBalances.getBalance1(), token1.decimals).div(poolWeights[1].toBigDecimal()).div(tokenAmountToDecimal(poolBalances.getBalance0(), token0.decimals).div(poolWeights[0].toBigDecimal()))
         return [price0, price1]
@@ -115,7 +117,7 @@ export function getTokenPrices(poolAddress: Address, token0: Token, token1: Toke
 
 export function getBtcPriceInUSD(): BigDecimal {
   // fetch eth prices for each stablecoin
-  let daiPool = Pool.load(DAI_TBTC_POOL) // dai is token0
+  let daiPool = Pool.load(GBUSD_KAVA_POOL) // dai is token0
   if (daiPool !== null) {
     return daiPool.token1Price
   } else {
@@ -128,7 +130,7 @@ export function getBtcPriceInUSD(): BigDecimal {
  * @todo update to be derived ETH (add stablecoin estimates)
  **/
 export function findBtcPerToken(token: Token): BigDecimal {
-  if (token.id == TBTC_ADDRESS) {
+  if (token.id == KAVA_ADDRESS) {
     return ONE_BD
   }
   let whiteList = token.whitelistPools
@@ -188,8 +190,8 @@ export function getTrackedAmountUSD(
   token1: Token
 ): BigDecimal {
   let bundle = Bundle.load('1')
-  let price0USD = !bundle ? ZERO_BD : token0.derivedBTC.times(bundle.btcPriceUSD)
-  let price1USD = !bundle ? ZERO_BD : token1.derivedBTC.times(bundle.btcPriceUSD)
+  let price0USD = !bundle ? ZERO_BD : token0.derivedBTC.times(bundle.KAVAPriceUSD)
+  let price1USD = !bundle ? ZERO_BD : token1.derivedBTC.times(bundle.KAVAPriceUSD)
 
   // both are whitelist tokens, return sum of both amounts
   if (WHITELIST_TOKENS.includes(token0.id) && WHITELIST_TOKENS.includes(token1.id)) {

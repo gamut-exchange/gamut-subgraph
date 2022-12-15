@@ -12,7 +12,7 @@ import {
   PoolHourData
 } from './../../generated/schema'
 import { FACTORY_ADDRESS } from './constants'
-import { BigInt, ethereum, log } from '@graphprotocol/graph-ts'
+import { Address, BigInt, ethereum, log } from '@graphprotocol/graph-ts'
 import { Pool as PoolABI } from '../../generated/Factory/Pool'
 import { tokenAmountToDecimal } from '.'
 
@@ -20,17 +20,17 @@ import { tokenAmountToDecimal } from '.'
  * Tracks global aggregate data over daily windows
  * @param event
  */
-export function updateGamutDayData(call: ethereum.Call): GamutDayData | null {
+export function updateGamutDayData(event: ethereum.Event): GamutDayData | null {
   let gamut = Factory.load(FACTORY_ADDRESS)
   if (!gamut) {
     log.error(`updateGamutDayData: factory {} isn't defind`, [FACTORY_ADDRESS])
     return null
   }
-  let timestamp = call.block.timestamp.toI32()
+  let timestamp = event.block.timestamp.toI32()
   let dayID = timestamp / 86400 // rounded
   let dayStartTimestamp = dayID * 86400
   let gamutDayData = GamutDayData.load(dayID.toString())
-  if (gamutDayData === null) {
+  if (gamutDayData == null) {
     gamutDayData = new GamutDayData(dayID.toString())
     gamutDayData.date = dayStartTimestamp
     gamutDayData.volumeBTC = ZERO_BD
@@ -44,21 +44,21 @@ export function updateGamutDayData(call: ethereum.Call): GamutDayData | null {
   return gamutDayData as GamutDayData
 }
 
-export function updatePoolDayData(call: ethereum.Call, isSwap: bool): PoolDayData | null {
-  let timestamp = call.block.timestamp.toI32()
+export function updatePoolDayData(event: ethereum.Event, poolID: Address): PoolDayData | null {
+  let timestamp = event.block.timestamp.toI32()
   let dayID = timestamp / 86400
   let dayStartTimestamp = dayID * 86400
-  let dayPoolID = call.to
+  let dayPoolID = poolID
     .toHexString()
     .concat('-')
     .concat(dayID.toString())
-  let pool = Pool.load(call.to.toHexString())
+  let pool = Pool.load(poolID.toHexString())
   if (!pool) {
-    log.error(`updatePoolDayData: pool {} isn't defind`, [call.to.toHexString()])
+    log.error(`updatePoolDayData: pool {} isn't defind`, [poolID.toHexString()])
     return null
   }
   let poolDayData = PoolDayData.load(dayPoolID)
-  if (poolDayData === null) {
+  if (poolDayData == null) {
     poolDayData = new PoolDayData(dayPoolID)
     poolDayData.date = BigInt.fromI32(dayStartTimestamp)
     poolDayData.pool = pool.id
@@ -87,7 +87,7 @@ export function updatePoolDayData(call: ethereum.Call, isSwap: bool): PoolDayDat
   poolDayData.token1Price = pool.token1Price
   poolDayData.tvlUSD = pool.totalValueLockedUSD
   poolDayData.txCount = poolDayData.txCount.plus(ONE_BI)
-  let poolContract = PoolABI.bind(call.to)
+  let poolContract = PoolABI.bind(poolID)
   poolDayData.liquidity = tokenAmountToDecimal(poolContract.totalSupply(), BigInt.fromI32(poolContract.decimals()))
   poolDayData.liquidityUSD = pool.totalValueLockedUSD
 
@@ -96,21 +96,21 @@ export function updatePoolDayData(call: ethereum.Call, isSwap: bool): PoolDayDat
   return poolDayData as PoolDayData
 }
 
-export function updatePoolHourData(call: ethereum.Call, isSwap: bool): PoolHourData | null {
-  let timestamp = call.block.timestamp.toI32()
+export function updatePoolHourData(event: ethereum.Event, poolID: Address): PoolHourData | null {
+  let timestamp = event.block.timestamp.toI32()
   let hourIndex = timestamp / 3600 // get unique hour within unix history
   let hourStartUnix = hourIndex * 3600 // want the rounded effect
-  let hourPoolID = call.to
+  let hourPoolID = poolID
     .toHexString()
     .concat('-')
     .concat(hourIndex.toString())
-  let pool = Pool.load(call.to.toHexString())
+  let pool = Pool.load(poolID.toHexString())
   if (!pool) {
-    log.error(`updatePoolHourData: pool {} isn't defind`, [call.to.toHexString()])
+    log.error(`updatePoolHourData: pool {} isn't defind`, [poolID.toHexString()])
     return null
   }
   let poolHourData = PoolHourData.load(hourPoolID)
-  if (poolHourData === null) {
+  if (poolHourData == null) {
     poolHourData = new PoolHourData(hourPoolID)
     poolHourData.periodStartUnix = hourStartUnix
     poolHourData.pool = pool.id
@@ -140,7 +140,7 @@ export function updatePoolHourData(call: ethereum.Call, isSwap: bool): PoolHourD
   poolHourData.close = pool.token0Price
   poolHourData.tvlUSD = pool.totalValueLockedUSD
   poolHourData.txCount = poolHourData.txCount.plus(ONE_BI)
-  let poolContract = PoolABI.bind(call.to)
+  let poolContract = PoolABI.bind(poolID)
   poolHourData.liquidity = tokenAmountToDecimal(poolContract.totalSupply(), BigInt.fromI32(poolContract.decimals()))
   poolHourData.save()
 
@@ -148,19 +148,19 @@ export function updatePoolHourData(call: ethereum.Call, isSwap: bool): PoolHourD
   return poolHourData as PoolHourData
 }
 
-export function updateTokenDayData(token: Token, call: ethereum.Call): TokenDayData {
+export function updateTokenDayData(token: Token, event: ethereum.Event): TokenDayData {
   let bundle = Bundle.load('1')
-  let timestamp = call.block.timestamp.toI32()
+  let timestamp = event.block.timestamp.toI32()
   let dayID = timestamp / 86400
   let dayStartTimestamp = dayID * 86400
   let tokenDayID = token.id
     .toString()
     .concat('-')
     .concat(dayID.toString())
-  let tokenPrice = !bundle ? ZERO_BD : token.derivedBTC.times(bundle.btcPriceUSD)
+  let tokenPrice = !bundle ? ZERO_BD : token.derivedBTC.times(bundle.KAVAPriceUSD)
 
   let tokenDayData = TokenDayData.load(tokenDayID)
-  if (tokenDayData === null) {
+  if (tokenDayData == null) {
     tokenDayData = new TokenDayData(tokenDayID)
     tokenDayData.date = dayStartTimestamp
     tokenDayData.token = token.id
@@ -183,7 +183,7 @@ export function updateTokenDayData(token: Token, call: ethereum.Call): TokenDayD
   }
 
   tokenDayData.close = tokenPrice
-  tokenDayData.priceUSD = !bundle ? ZERO_BD : token.derivedBTC.times(bundle.btcPriceUSD)
+  tokenDayData.priceUSD = !bundle ? ZERO_BD : token.derivedBTC.times(bundle.KAVAPriceUSD)
   tokenDayData.totalValueLocked = token.totalValueLocked
   tokenDayData.totalValueLockedUSD = token.totalValueLockedUSD
   tokenDayData.save()
@@ -191,9 +191,9 @@ export function updateTokenDayData(token: Token, call: ethereum.Call): TokenDayD
   return tokenDayData as TokenDayData
 }
 
-export function updateTokenHourData(token: Token, call: ethereum.Call): TokenHourData {
+export function updateTokenHourData(token: Token, event: ethereum.Event): TokenHourData {
   let bundle = Bundle.load('1')
-  let timestamp = call.block.timestamp.toI32()
+  let timestamp = event.block.timestamp.toI32()
   let hourIndex = timestamp / 3600 // get unique hour within unix history
   let hourStartUnix = hourIndex * 3600 // want the rounded effect
   let tokenHourID = token.id
@@ -201,9 +201,9 @@ export function updateTokenHourData(token: Token, call: ethereum.Call): TokenHou
     .concat('-')
     .concat(hourIndex.toString())
   let tokenHourData = TokenHourData.load(tokenHourID)
-  let tokenPrice = !bundle ? ZERO_BD : token.derivedBTC.times(bundle.btcPriceUSD)
+  let tokenPrice = !bundle ? ZERO_BD : token.derivedBTC.times(bundle.KAVAPriceUSD)
 
-  if (tokenHourData === null) {
+  if (tokenHourData == null) {
     tokenHourData = new TokenHourData(tokenHourID)
     tokenHourData.periodStartUnix = hourStartUnix
     tokenHourData.token = token.id

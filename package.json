@@ -4,7 +4,8 @@
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ enjoydream420/gamut-ropsten",
+    "kava-create": "graph create gamut-kava --node https://the-graph-admin.kava.io",
+    "kava-deploy": "graph deploy gamut-kava --debug --ipfs https://api.thegraph.com/ipfs/ --node https://the-graph-admin.kava.io",
     "create-local": "graph create --node http://localhost:8020/ enjoydream420/gamut-ropsten",
     "remove-local": "graph remove --node http://localhost:8020/ enjoydream420/gamut-ropsten",
     "deploy-local": "graph deploy  --access-token 342da72ccae8751f3b59a0a3b48129ed --node http://localhost:8020/ --ipfs http://localhost:5001 enjoydream420/gamut-ropsten",

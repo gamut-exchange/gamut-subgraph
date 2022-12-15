@@ -1,39 +1,34 @@
 import { WHITELIST_TOKENS } from './../utils/pricing'
 /* eslint-disable prefer-const */
 import { FACTORY_ADDRESS, ZERO_BI, ONE_BI, ZERO_BD, ADDRESS_ZERO } from './../utils/constants'
-import { Factory } from '../../generated/schema'
 import { PoolCreated } from '../../generated/Factory/Factory'
-import { Pool, Token, Bundle } from '../../generated/schema'
+import { Factory, Pool, Token, Bundle } from '../../generated/schema'
 import { Pool as PoolTemplate } from '../../generated/templates'
 import { fetchTokenSymbol, fetchTokenName, fetchTokenTotalSupply, fetchTokenDecimals } from '../utils/token'
-import { log, Address } from '@graphprotocol/graph-ts'
+import { log } from '@graphprotocol/graph-ts'
 
 export function handlePoolCreated(event: PoolCreated): void {
-  // temp fix
-  // if (event.params.pool == Address.fromHexString('0x8fe8d9bb8eeba3ed688069c3d6b556c9ca258248')) {
-  //   return
-  // }
 
   // load factory
   let factory = Factory.load(FACTORY_ADDRESS)
-  if (factory === null) {
+  if (factory == null) {
     factory = new Factory(FACTORY_ADDRESS)
     factory.poolCount = ZERO_BI
-    factory.totalVolumeBTC = ZERO_BD
+    factory.totalVolumeKAVA = ZERO_BD
     factory.totalVolumeUSD = ZERO_BD
     factory.untrackedVolumeUSD = ZERO_BD
     factory.totalFeesUSD = ZERO_BD
-    factory.totalFeesBTC = ZERO_BD
-    factory.totalValueLockedBTC = ZERO_BD
+    factory.totalFeesKAVA = ZERO_BD
+    factory.totalValueLockedKAVA = ZERO_BD
     factory.totalValueLockedUSD = ZERO_BD
     factory.totalValueLockedUSDUntracked = ZERO_BD
-    factory.totalValueLockedBTCUntracked = ZERO_BD
+    factory.totalValueLockedKAVAUntracked = ZERO_BD
     factory.txCount = ZERO_BI
     factory.owner = ADDRESS_ZERO
 
     // create new bundle for tracking eth price
     let bundle = new Bundle('1')
-    bundle.btcPriceUSD = ZERO_BD
+    bundle.KAVAPriceUSD = ZERO_BD
     bundle.save()
   }
 
@@ -44,18 +39,12 @@ export function handlePoolCreated(event: PoolCreated): void {
   let token1 = Token.load(event.params.token1.toHexString())
 
   // fetch info if null
-  if (token0 === null) {
+  if (token0 == null) {
     token0 = new Token(event.params.token0.toHexString())
     token0.symbol = fetchTokenSymbol(event.params.token0)
     token0.name = fetchTokenName(event.params.token0)
     token0.totalSupply = fetchTokenTotalSupply(event.params.token0)
     let decimals = fetchTokenDecimals(event.params.token0)
-
-    // bail if we couldn't figure out the decimals
-    if (decimals === null) {
-      log.debug('mybug the decimal on token 0 was null', [])
-      return
-    }
 
     token0.decimals = decimals
     token0.derivedBTC = ZERO_BD
@@ -71,17 +60,12 @@ export function handlePoolCreated(event: PoolCreated): void {
     token0.whitelistPools = []
   }
 
-  if (token1 === null) {
+  if (token1 == null) {
     token1 = new Token(event.params.token1.toHexString())
     token1.symbol = fetchTokenSymbol(event.params.token1)
     token1.name = fetchTokenName(event.params.token1)
     token1.totalSupply = fetchTokenTotalSupply(event.params.token1)
     let decimals = fetchTokenDecimals(event.params.token1)
-    // bail if we couldn't figure out the decimals
-    if (decimals === null) {
-      log.debug('mybug the decimal on token 0 was null', [])
-      return
-    }
     token1.decimals = decimals
     token1.derivedBTC = ZERO_BD
     token1.volume = ZERO_BD
@@ -124,7 +108,7 @@ export function handlePoolCreated(event: PoolCreated): void {
   pool.totalValueLockedToken0 = ZERO_BD
   pool.totalValueLockedToken1 = ZERO_BD
   pool.totalValueLockedUSD = ZERO_BD
-  pool.totalValueLockedBTC = ZERO_BD
+  pool.totalValueLockedKAVA = ZERO_BD
   pool.totalValueLockedUSDUntracked = ZERO_BD
   pool.volumeToken0 = ZERO_BD
   pool.volumeToken1 = ZERO_BD

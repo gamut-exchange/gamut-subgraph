@@ -77,15 +77,15 @@ export function convertEthToDecimal(eth: BigInt): BigDecimal {
   return eth.toBigDecimal().div(exponentToBigDecimal(BigInt.fromString('18')))
 }
 
-export function loadTransaction(call: ethereum.Call): Transaction {
-  let transaction = Transaction.load(call.transaction.hash.toHexString())
-  if (transaction === null) {
-    transaction = new Transaction(call.transaction.hash.toHexString())
+export function loadTransaction(event: ethereum.Event): Transaction {
+  let transaction = Transaction.load(event.transaction.hash.toHexString())
+  if (transaction == null) {
+    transaction = new Transaction(event.transaction.hash.toHexString())
   }
-  transaction.blockNumber = call.block.number
-  transaction.timestamp = call.block.timestamp
-  transaction.gasLimit = call.transaction.gasLimit
-  transaction.gasPrice = call.transaction.gasPrice
+  transaction.blockNumber = event.block.number
+  transaction.timestamp = event.block.timestamp
+  transaction.gasLimit = event.transaction.gasLimit
+  transaction.gasPrice = event.transaction.gasPrice
   transaction.save()
   return transaction as Transaction
 }
