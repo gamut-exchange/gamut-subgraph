@@ -18,11 +18,11 @@ dataSources:
         - Token
       abis:
         - name: Factory
-          file: ./abis/Factory.json
+          file: ./abis/factory.json
         - name: ERC20
-          file: ./abis/ERC20.json
+          file: ./abis/erc20.json
         - name: Pool
-          file: ./abis/Pool.json
+          file: ./abis/pool.json
       eventHandlers:
         - event: PoolCreated(indexed address,indexed address,indexed address)
           handler: handlePoolCreated
@@ -44,13 +44,13 @@ dataSources:
         - Pool
       abis:
         - name: Factory
-          file: ./abis/Factory.json
+          file: ./abis/factory.json
         - name: Router
-          file: ./abis/Router.json
+          file: ./abis/router.json
         - name: Pool
-          file: ./abis/Pool.json
+          file: ./abis/pool.json
         - name: ERC20
-          file: ./abis/ERC20.json
+          file: ./abis/erc20.json
       eventHandlers:
         - event: Swap(indexed address,indexed address,uint256,uint256,uint256)
           handler: handleSwap
@@ -73,11 +73,11 @@ templates:
         - Token
       abis:
         - name: Pool
-          file: ./abis/Pool.json
+          file: ./abis/pool.json
         - name: Factory
-          file: ./abis/Factory.json
+          file: ./abis/factory.json
         - name: ERC20
-          file: ./abis/ERC20.json
+          file: ./abis/erc20.json
       eventHandlers:
         - event: SwapFeePercentageChanged(uint256)
           handler: handleSwapFee
